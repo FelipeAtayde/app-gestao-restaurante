@@ -102,7 +102,7 @@ if file_vendas:
     resumo_df.to_excel(excel_vendas, index=False, engine='openpyxl')
     st.download_button("\U0001F4C5 Baixar Análise de Vendas (.xlsx)", data=excel_vendas.getvalue(), file_name="analise_maiores_vendas.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# ========================== ANALISADOR DE CONSUMO (UNIFICADO) ==========================
+# ========================== ANALISADOR DE CONSUMO CORRIGIDO ==========================
 st.divider()
 st.header("\U0001F4E6 Análise de Consumo de Estoque")
 file_consumo = st.file_uploader("Faça upload da planilha de CONSUMO", type=["xlsx"], key="consumo")
@@ -151,7 +151,7 @@ if file_consumo:
             return [cor] * len(val)
 
         st.subheader("\U0001F4E6 Relatório de Consumo de Insumos")
-        st.dataframe(resultado.style.apply(destacar_top_5, axis=1), use_container_width=True)
+        st.dataframe(resultado.style.apply(destacar_top_5, axis=1).format({"quant_consumo": "{:.2f}", "total_consumo": "R$ {:.2f}"}), use_container_width=True)
 
         excel_consumo = BytesIO()
         resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
