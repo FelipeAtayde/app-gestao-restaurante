@@ -87,7 +87,7 @@ if file_vendas:
             resumo.append({"Categoria": nome, "Quantidade": qtd, "Valor Total": f"R$ {val:,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")})
 
     resumo_df = pd.DataFrame(resumo)
-    resumo_df["Valor Num"] = resumo_df["Valor Total"].str.replace("R\$ ", "", regex=True).str.replace(".", "", regex=True).str.replace(",", ".").astype(float)
+    resumo_df["Valor Num"] = resumo_df["Valor Total"].str.replace("R\$ ", "", regex=True).str.replace(".", "", regex=False).str.replace(",", ".").astype(float)
     resumo_df = resumo_df.sort_values(by="Valor Num", ascending=False).drop(columns="Valor Num")
 
     st.subheader("Resumo de Pequenos e Grandes")
@@ -129,8 +129,9 @@ if file_consumo:
             df["quantidade"] = pd.to_numeric(df["quantidade"], errors="coerce").fillna(0)
             df["valor total"] = pd.to_numeric(
                 df["valor total"].astype(str)
-                .str.replace("R\$", "", regex=True)
-                .str.replace(r"[.]", "", regex=True)
+                .str.replace("R", "", regex=False)
+                .str.replace("$", "", regex=False)
+                .str.replace(".", "", regex=False)
                 .str.replace(",", "."),
                 errors="coerce"
             ).fillna(0)
