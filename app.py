@@ -101,3 +101,49 @@ if file_vendas:
     excel_vendas = BytesIO()
     resumo_df.to_excel(excel_vendas, index=False, engine='openpyxl')
     st.download_button("📥 Baixar Análise de Vendas (.xlsx)", data=excel_vendas.getvalue(), file_name="analise_maiores_vendas.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+# ========================== ANALISADOR DE CONSUMO ==========================
+st.divider()
+st.header("📦 Análise de Consumo de Estoque")
+file_consumo = st.file_uploader("Faça upload da planilha de CONSUMO", type=["xlsx"], key="consumo")
+
+if file_consumo:
+    df_consumo = pd.read_excel(file_consumo, sheet_name=None)
+    abas = list(df_consumo.keys())
+
+    if len(abas) >= 3:
+        estoque_ini = df_consumo[abas[0]]
+        compras = df_consumo[abas[1]]
+        estoque_fim = df_consumo[abas[2]]
+
+        def preparar(df):
+            df.columns = [c.strip().lower() for c in df.columns]
+            df = df.rename(columns={"valor unitario": "unit", "valor total": "total"})
+            df["item"] = df["item"].astype(str).str.lower().str.strip()
+            df = df.groupby("item")["quantidade", "total"].sum().reset_index()
+            return df
+
+        ini = preparar(estoque_ini)
+        ent = preparar(compras)
+        fim = preparar(estoque_fim)
+
+        base = pd.merge(ini, ent, on="item", how="outer", suffixes=("_ini", "_ent"))
+        base = pd.merge(base, fim, on="item", how="outer")
+        base = base.rename(columns={"quantidade": "quant_fim", "total": "total_fim"})
+
+        base = base.fillna(0)
+        base["quant_consumo"] = base["quantidade_ini"] + base["quantidade_ent"] - base["quant_fim"]
+        base["total_consumo"] = base["total_ini"] + base["total_ent"] - base["total_fim"]
+
+        resultado = base[["item", "quant_consumo", "total_consumo"]]
+        resultado = resultado[resultado["quant_consumo"] > 0]
+        resultado = resultado.sort_values(by="total_consumo", ascending=False)
+
+        st.subheader("📦 Relatório de Consumo de Insumos")
+        st.dataframe(resultado, use_container_width=True)
+
+        excel_consumo = BytesIO()
+        resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
+        st.download_button("📥 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    else:
+        st.warning("⚠️ Planilha de consumo deve conter 3 abas: estoque inicial, compras e estoque final.")
