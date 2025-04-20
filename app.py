@@ -102,51 +102,51 @@ if file_vendas:
     resumo_df.to_excel(excel_vendas, index=False, engine='openpyxl')
     st.download_button("📥 Baixar Análise de Vendas (.xlsx)", data=excel_vendas.getvalue(), file_name="analise_maiores_vendas.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-# ========================== ANALISADOR DE CONSUMO ==========================
+# ========================== ANALISADOR DE CONSUMO (UNIFICADO) ==========================
 st.divider()
 st.header("📦 Análise de Consumo de Estoque")
 file_consumo = st.file_uploader("Faça upload da planilha de CONSUMO", type=["xlsx"], key="consumo")
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="3;url=https://agente-consumo-estoque-h3jxvtsbetutytnkqevgsz.streamlit.app/">
-  <title>Relatório de consumo</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
-    }
-    h1 {
-      font-size: 2em;
-      color: #333;
-    }
-    p {
-      margin: 10px 0;
-    }
-    a.button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 12px 24px;
-      text-decoration: none;
-      border-radius: 5px;
-      margin-top: 20px;
-      display: inline-block;
-    }
-  </style>
-</head>
-<body>
-  <h1>Relatório de consumo</h1>
-  <p>Redirecionando para o sistema de controle de consumo...</p>
-  <p>Se não for redirecionado automaticamente, clique no botão abaixo:</p>
-  <a class="button" href="https://agente-consumo-estoque-h3jxvtsbetutytnkqevgsz.streamlit.app/">Acessar o app</a>
-</body>
-</html>
+if file_consumo:
+    df = pd.read_excel(file_consumo)
+    df = df.dropna(how="all")
+
+    ini = df.iloc[:, :4].copy()
+    compras = df.iloc[:, 4:8].copy()
+    fim = df.iloc[:, 8:].copy()
+
+    ini.columns = compras.columns = fim.columns = ["item", "quantidade", "valor unitario", "valor total"]
+    ini = ini.dropna(subset=["item"])
+    compras = compras.dropna(subset=["item"])
+    fim = fim.dropna(subset=["item"])
+
+    def limpar(df):
+        df = df.copy()
+        df["item"] = df["item"].astype(str).str.lower().str.strip()
+        df["quantidade"] = pd.to_numeric(df["quantidade"], errors="coerce").fillna(0)
+        df["valor total"] = pd.to_numeric(df["valor total"].astype(str).str.replace("R$", "").str.replace(".", "", regex=False).str.replace(",", "."), errors="coerce").fillna(0)
+        return df.groupby("item")[["quantidade", "valor total"]].sum().reset_index()
+
+    ini = limpar(ini)
+    compras = limpar(compras)
+    fim = limpar(fim)
+
+    base = pd.merge(ini, compras, on="item", how="outer", suffixes=("_ini", "_ent"))
+    base = pd.merge(base, fim, on="item", how="outer")
+    base = base.rename(columns={"quantidade": "quant_fim", "valor total": "total_fim"})
+
+    base = base.fillna(0)
+    base["quant_consumo"] = base["quantidade_ini"] + base["quantidade_ent"] - base["quant_fim"]
+    base["total_consumo"] = base["valor total_ini"] + base["valor total_ent"] - base["total_fim"]
+
+    resultado = base[["item", "quant_consumo", "total_consumo"]]
+    resultado = resultado[resultado["quant_consumo"] > 0]
+    resultado = resultado.sort_values(by="total_consumo", ascending=False)
+
+    st.subheader("📦 Relatório de Consumo de Insumos")
+    st.dataframe(resultado, use_container_width=True)
+
+    excel_consumo = BytesIO()
+    resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
+    st.download_button("📥 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
