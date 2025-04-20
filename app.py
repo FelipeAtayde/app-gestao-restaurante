@@ -90,7 +90,7 @@ if file_vendas:
             resumo.append({"Categoria": nome, "Quantidade": qtd, "Valor Total": f"R$ {val:,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")})
 
     resumo_df = pd.DataFrame(resumo)
-    resumo_df["Valor Num"] = resumo_df["Valor Total"].str.replace("R\$ ", "", regex=True).str.replace(".", "", regex=False).str.replace(",", ".").astype(float)
+    resumo_df["Valor Num"] = resumo_df["Valor Total"].str.replace("R\$ ", "", regex=True).str.replace(".", "", regex=False).str.replace(",", ".", regex=False).astype(float)
     resumo_df = resumo_df.sort_values(by="Valor Num", ascending=False).drop(columns="Valor Num")
 
     st.subheader("Resumo de Pequenos e Grandes")
@@ -130,7 +130,13 @@ if file_consumo:
             df = df.copy()
             df["item"] = df["item"].astype(str).str.lower().str.strip()
             df["quantidade"] = pd.to_numeric(df["quantidade"], errors="coerce").fillna(0)
-            df["valor total"] = df["valor total"].astype(str).str.replace("[^0-9,.-]", "", regex=True).str.replace(".", "", regex=False).str.replace(",", ".").astype(float)
+            df["valor total"] = (
+                df["valor total"].astype(str)
+                .str.replace("[^0-9,.-]", "", regex=True)
+                .str.replace(".", "", regex=False)
+                .str.replace(",", ".", regex=False)
+            )
+            df["valor total"] = pd.to_numeric(df["valor total"], errors="coerce").fillna(0)
             return df.groupby("item")[["quantidade", "valor total"]].sum().reset_index()
 
         ini = limpar(ini)
