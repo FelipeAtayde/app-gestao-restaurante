@@ -4,14 +4,14 @@ import unidecode
 from io import BytesIO
 
 st.set_page_config(page_title="App de Vendas e Consumo", layout="wide")
-st.title("📊 Análises do Restaurante")
+st.title("\U0001F4CA Análises do Restaurante")
 
 # Função auxiliar de normalização de texto
 def normalizar(texto):
     return unidecode.unidecode(str(texto)).lower().strip()
 
 # ========================== ANALISADOR DE VENDAS ==========================
-st.header("🍽️ Análise de Maiores Vendas")
+st.header("\U0001F37D️ Análise de Maiores Vendas")
 file_vendas = st.file_uploader("Faça upload da planilha de VENDAS", type=["xlsx"], key="vendas")
 
 if file_vendas:
@@ -95,16 +95,16 @@ if file_vendas:
     st.write(f"Grande: {total_g}")
     st.write(f"Total: {total_geral}")
 
-    st.subheader("📋 Resumo Final Agrupado")
+    st.subheader("\U0001F4CB Resumo Final Agrupado")
     st.dataframe(resumo_df, use_container_width=True)
 
     excel_vendas = BytesIO()
     resumo_df.to_excel(excel_vendas, index=False, engine='openpyxl')
-    st.download_button("📥 Baixar Análise de Vendas (.xlsx)", data=excel_vendas.getvalue(), file_name="analise_maiores_vendas.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    st.download_button("\U0001F4C5 Baixar Análise de Vendas (.xlsx)", data=excel_vendas.getvalue(), file_name="analise_maiores_vendas.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # ========================== ANALISADOR DE CONSUMO (UNIFICADO) ==========================
 st.divider()
-st.header("📦 Análise de Consumo de Estoque")
+st.header("\U0001F4E6 Análise de Consumo de Estoque")
 file_consumo = st.file_uploader("Faça upload da planilha de CONSUMO", type=["xlsx"], key="consumo")
 
 if file_consumo:
@@ -144,11 +144,15 @@ if file_consumo:
 
         resultado = base[["item", "quant_consumo", "total_consumo"]]
         resultado = resultado[resultado["quant_consumo"] > 0]
-        resultado = resultado.sort_values(by="total_consumo", ascending=False)
+        resultado = resultado.sort_values(by="total_consumo", ascending=False).reset_index(drop=True)
 
-        st.subheader("📦 Relatório de Consumo de Insumos")
-        st.dataframe(resultado, use_container_width=True)
+        def destacar_top_5(val):
+            cor = 'color: red; font-weight: bold' if val.name < 5 else ''
+            return [cor] * len(val)
+
+        st.subheader("\U0001F4E6 Relatório de Consumo de Insumos")
+        st.dataframe(resultado.style.apply(destacar_top_5, axis=1), use_container_width=True)
 
         excel_consumo = BytesIO()
         resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
-        st.download_button("📥 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.download_button("\U0001F4C5 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
