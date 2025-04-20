@@ -107,48 +107,46 @@ st.divider()
 st.header("📦 Análise de Consumo de Estoque")
 file_consumo = st.file_uploader("Faça upload da planilha de CONSUMO", type=["xlsx"], key="consumo")
 
-if file_consumo:
-    df_consumo = pd.read_excel(file_consumo, sheet_name=None)
-    abas = list(df_consumo.keys())
-
-    if len(abas) >= 3:
-        estoque_ini = df_consumo[abas[0]]
-        compras = df_consumo[abas[1]]
-        estoque_fim = df_consumo[abas[2]]
-
-        def preparar(df):
-            df.columns = [c.strip().lower() for c in df.columns]
-            df = df.rename(columns={"valor unitario": "unit", "valor total": "total"})
-            item_col = [c for c in df.columns if c.strip().lower() == "item"]
-            if not item_col:
-                st.error("❌ A coluna 'Item' não foi encontrada em uma das abas. Verifique sua planilha.")
-                return pd.DataFrame()
-            df["item"] = df[item_col[0]].astype(str).str.lower().str.strip()
-            df = df.groupby("item")["quantidade", "total"].sum().reset_index()
-            return df
-
-        ini = preparar(estoque_ini)
-        ent = preparar(compras)
-        fim = preparar(estoque_fim)
-
-        if not ini.empty and not ent.empty and not fim.empty:
-            base = pd.merge(ini, ent, on="item", how="outer", suffixes=("_ini", "_ent"))
-            base = pd.merge(base, fim, on="item", how="outer")
-            base = base.rename(columns={"quantidade": "quant_fim", "total": "total_fim"})
-
-            base = base.fillna(0)
-            base["quant_consumo"] = base["quantidade_ini"] + base["quantidade_ent"] - base["quant_fim"]
-            base["total_consumo"] = base["total_ini"] + base["total_ent"] - base["total_fim"]
-
-            resultado = base[["item", "quant_consumo", "total_consumo"]]
-            resultado = resultado[resultado["quant_consumo"] > 0]
-            resultado = resultado.sort_values(by="total_consumo", ascending=False)
-
-            st.subheader("📦 Relatório de Consumo de Insumos")
-            st.dataframe(resultado, use_container_width=True)
-
-            excel_consumo = BytesIO()
-            resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
-            st.download_button("📥 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    else:
-        st.warning("⚠️ Planilha de consumo deve conter 3 abas: estoque inicial, compras e estoque final.")
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="3;url=https://agente-consumo-estoque-h3jxvtsbetutytnkqevgsz.streamlit.app/">
+  <title>Relatório de consumo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+      color: #333;
+    }
+    p {
+      margin: 10px 0;
+    }
+    a.button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Relatório de consumo</h1>
+  <p>Redirecionando para o sistema de controle de consumo...</p>
+  <p>Se não for redirecionado automaticamente, clique no botão abaixo:</p>
+  <a class="button" href="https://agente-consumo-estoque-h3jxvtsbetutytnkqevgsz.streamlit.app/">Acessar o app</a>
+</body>
+</html>
