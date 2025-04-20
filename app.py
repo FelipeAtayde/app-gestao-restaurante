@@ -119,7 +119,11 @@ if file_consumo:
         def preparar(df):
             df.columns = [c.strip().lower() for c in df.columns]
             df = df.rename(columns={"valor unitario": "unit", "valor total": "total"})
-            df["item"] = df["item"].astype(str).str.lower().str.strip()
+            item_col = [c for c in df.columns if c.strip().lower() == "item"]
+            if not item_col:
+                st.error("❌ A coluna 'Item' não foi encontrada em uma das abas. Verifique sua planilha.")
+                return pd.DataFrame()
+            df["item"] = df[item_col[0]].astype(str).str.lower().str.strip()
             df = df.groupby("item")["quantidade", "total"].sum().reset_index()
             return df
 
@@ -127,23 +131,24 @@ if file_consumo:
         ent = preparar(compras)
         fim = preparar(estoque_fim)
 
-        base = pd.merge(ini, ent, on="item", how="outer", suffixes=("_ini", "_ent"))
-        base = pd.merge(base, fim, on="item", how="outer")
-        base = base.rename(columns={"quantidade": "quant_fim", "total": "total_fim"})
+        if not ini.empty and not ent.empty and not fim.empty:
+            base = pd.merge(ini, ent, on="item", how="outer", suffixes=("_ini", "_ent"))
+            base = pd.merge(base, fim, on="item", how="outer")
+            base = base.rename(columns={"quantidade": "quant_fim", "total": "total_fim"})
 
-        base = base.fillna(0)
-        base["quant_consumo"] = base["quantidade_ini"] + base["quantidade_ent"] - base["quant_fim"]
-        base["total_consumo"] = base["total_ini"] + base["total_ent"] - base["total_fim"]
+            base = base.fillna(0)
+            base["quant_consumo"] = base["quantidade_ini"] + base["quantidade_ent"] - base["quant_fim"]
+            base["total_consumo"] = base["total_ini"] + base["total_ent"] - base["total_fim"]
 
-        resultado = base[["item", "quant_consumo", "total_consumo"]]
-        resultado = resultado[resultado["quant_consumo"] > 0]
-        resultado = resultado.sort_values(by="total_consumo", ascending=False)
+            resultado = base[["item", "quant_consumo", "total_consumo"]]
+            resultado = resultado[resultado["quant_consumo"] > 0]
+            resultado = resultado.sort_values(by="total_consumo", ascending=False)
 
-        st.subheader("📦 Relatório de Consumo de Insumos")
-        st.dataframe(resultado, use_container_width=True)
+            st.subheader("📦 Relatório de Consumo de Insumos")
+            st.dataframe(resultado, use_container_width=True)
 
-        excel_consumo = BytesIO()
-        resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
-        st.download_button("📥 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            excel_consumo = BytesIO()
+            resultado.to_excel(excel_consumo, index=False, engine='openpyxl')
+            st.download_button("📥 Baixar Consumo de Estoque (.xlsx)", data=excel_consumo.getvalue(), file_name="analise_consumo_estoque.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
         st.warning("⚠️ Planilha de consumo deve conter 3 abas: estoque inicial, compras e estoque final.")
